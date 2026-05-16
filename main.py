@@ -65,7 +65,7 @@ class WindTurbinePipeline:
             return None
 
     def generate_plots(self):
-        """Step 4: Generate engineering plots and an animated chart."""
+        """Step 4: Generate 3 static engineering plots and 2 animated charts."""
         try:
             print("⏳ Step 4: Generating static and animated engineering charts...")
             os.makedirs(self.plots_dir, exist_ok=True)
@@ -73,38 +73,58 @@ class WindTurbinePipeline:
             # Sort data chronologically
             sorted_df = self.df.sort_values(by='Date/Time').copy()
             
-            # Take a subset so the animation compiles efficiently
+            # Take a subset so the animations compile efficiently without crashing
             plot_df = sorted_df.head(500).copy()
             
             # Create a string version of the time for the animation timeline
             plot_df['Time_Label'] = plot_df['Date/Time'].dt.strftime('%Y-%m-%d %H:%M')
             
-            # --- Chart 1: Static Power Curve Scatter ---
+            # ==========================================
+            # 📊 STATIC PLOTS (3 REQUIRED)
+            # ==========================================
+            
+            # --- Static Plot 1: Power Curve Scatter ---
             fig1 = px.scatter(
                 plot_df, 
                 x='Wind Speed (m/s)', 
                 y='LV ActivePower (kW)',
-                title='Turbine Performance: Wind Speed vs Active Power (8-12 m/s Filter)',
+                title='Static 1: Wind Speed vs Active Power (8-12 m/s Filter)',
                 labels={'Wind Speed (m/s)': 'Wind Speed (m/s)', 'LV ActivePower (kW)': 'Power Output (kW)'},
                 template='plotly_dark'
             )
             fig1.write_image(os.path.join(self.plots_dir, 'static_plot1.png'))
             print("💾 Saved: outputs/static_plot1.png")
             
-            # --- Chart 2: Static Time Series Timeline ---
+            # --- Static Plot 2: Time Series Timeline ---
             fig2 = px.line(
                 plot_df, 
                 x='Date/Time', 
                 y='LV ActivePower (kW)',
-                title='Active Power Production Timeline',
+                title='Static 2: Active Power Production Timeline',
                 template='plotly_dark'
             )
             fig2.write_image(os.path.join(self.plots_dir, 'static_plot2.png'))
             print("💾 Saved: outputs/static_plot2.png")
             
-            # --- Chart 3: Animated Chart ---
-            print("🎬 Compiling the engineering animation file (this may take a moment)...")
-            fig_anim = px.scatter(
+            # --- Static Plot 3: Power Output Distribution ---
+            fig3 = px.histogram(
+                plot_df,
+                x='LV ActivePower (kW)',
+                nbins=30,
+                title='Static 3: Frequency Distribution of Active Power Output',
+                template='plotly_dark',
+                color_discrete_sequence=['#00CC96']
+            )
+            fig3.write_image(os.path.join(self.plots_dir, 'static_plot3.png'))
+            print("💾 Saved: outputs/static_plot3.png")
+            
+            # ==========================================
+            # 🎬 ANIMATED PLOTS (2 REQUIRED)
+            # ==========================================
+            
+            # --- Animated Plot 1: Power Output Evolution ---
+            print("🎬 Compiling Animation 1...")
+            fig_anim1 = px.scatter(
                 plot_df,
                 x='Wind Speed (m/s)',
                 y='LV ActivePower (kW)',
@@ -112,15 +132,29 @@ class WindTurbinePipeline:
                 range_x=[7.5, 12.5],            
                 range_y=[-100, 4000],              
                 color='Wind Direction (°)',     
-                title='Animated Power Output Evolution over Time',
+                title='Animation 1: Power Output Evolution over Time',
                 template='plotly_dark'
             )
-            
-            # Save as interactive HTML so your professor can use the Play button
-            fig_anim.write_html(os.path.join(self.plots_dir, 'animation1.html'))
+            fig_anim1.write_html(os.path.join(self.plots_dir, 'animation1.html'))
             print("💾 Saved: outputs/animation1.html")
             
-            print("✅ All static and animated files successfully generated!")
+            # --- Animated Plot 2: Wind Speed vs Direction Tracking ---
+            print("🎬 Compiling Animation 2...")
+            fig_anim2 = px.scatter(
+                plot_df,
+                x='Wind Speed (m/s)',
+                y='Wind Direction (°)',
+                animation_frame='Time_Label',
+                range_x=[7.5, 12.5],
+                range_y=[-10, 370],
+                color='LV ActivePower (kW)',
+                title='Animation 2: Wind Speed vs Direction Shifts over Time',
+                template='plotly_dark'
+            )
+            fig_anim2.write_html(os.path.join(self.plots_dir, 'animation2.html'))
+            print("💾 Saved: outputs/animation2.html")
+            
+            print("✅ All 3 static and 2 animated files successfully updated!")
         except Exception as e:
             print(f"❌ Visualization failed: {e}")
 
